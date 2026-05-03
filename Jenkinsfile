@@ -6,8 +6,20 @@ pipeline {
         IMAGE_TAG           = "${BUILD_NUMBER}"
         FULL_IMAGE          = "${IMAGE_NAME}:${IMAGE_TAG}"
         KUBECONFIG          = '/var/lib/jenkins/.kube/config'
+        MASTER_PRIVATE_IP   = '172.31.45.159'
     }
     stages {
+        stage('Fix Kubeconfig') {
+            steps {
+                sh """
+                    sudo sed -i "s|https://.*:6443|https://${MASTER_PRIVATE_IP}:6443|" ${KUBECONFIG}
+                    sudo sed -i '/certificate-authority-data/d' ${KUBECONFIG}
+                    grep -q 'insecure-skip-tls-verify' ${KUBECONFIG} || \
+                        sudo sed -i '/server:/a\\    insecure-skip-tls-verify: true' ${KUBECONFIG}
+                    kubectl get nodes --kubeconfig=${KUBECONFIG}
+                """
+            }
+        }
         stage('Checkout') {
             steps {
                 git branch: 'main',
@@ -43,8 +55,8 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 sh """
-                    kubectl apply -f k8s/deployment.yaml --kubeconfig=${KUBECONFIG}
-                    kubectl apply -f k8s/service.yaml --kubeconfig=${KUBECONFIG}
+                    kubectl apply --validate=false -f k8s/deployment.yaml --kubeconfig=${KUBECONFIG}
+                    kubectl apply --validate=false -f k8s/service.yaml --kubeconfig=${KUBECONFIG}
                     kubectl set image deployment/cicd-demo-app \
                         cicd-demo-app=${FULL_IMAGE} --kubeconfig=${KUBECONFIG}
                     kubectl rollout status deployment/cicd-demo-app \
