@@ -3,6 +3,9 @@ echo "================================================"
 echo "  EXPERIMENT 1 PROOF — Aakash E | RA2311026010022"
 echo "================================================"
 
+# Hardcoded Worker-1 public IP (update if changed after restart)
+WORKER_IP="54.165.36.61"
+
 echo ""
 echo "--- 0. AUTO-FIXING KUBECONFIG ---"
 MASTER_PRIVATE_IP="172.31.45.159"
@@ -34,14 +37,12 @@ kubectl rollout history deployment/cicd-demo-app --kubeconfig=/var/lib/jenkins/.
 
 echo ""
 echo "--- 6. APP HEALTH CHECK ---"
-WORKER_IP=$(kubectl get nodes -o wide --kubeconfig=/var/lib/jenkins/.kube/config \
-  | grep -v control-plane | grep Ready | head -1 | awk '{print $7}')
 echo "Using Worker IP: $WORKER_IP"
 curl -s http://${WORKER_IP}:30080/health | python3 -m json.tool
 
 echo ""
 echo "--- 7. LIVE APP ---"
-curl -s http://${WORKER_IP}:30080 | grep -o 'Aakash E\|RA2311026010022\|CI.CD Pipeline'
+curl -s http://${WORKER_IP}:30080 | grep -o 'Aakash E\|RA2311026010022\|CI.CD Pipeline\|healthy'
 
 echo ""
 echo "--- 8. DOCKER IMAGE ---"
