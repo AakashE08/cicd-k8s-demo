@@ -11,6 +11,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 git branch: 'main',
+                    credentialsId: 'github-credentials',
                     url: 'https://github.com/AakashE08/cicd-k8s-demo.git'
             }
         }
