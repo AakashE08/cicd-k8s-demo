@@ -34,14 +34,21 @@ kubectl rollout history deployment/cicd-demo-app --kubeconfig=/var/lib/jenkins/.
 
 echo ""
 echo "--- 6. APP HEALTH CHECK ---"
-curl -s http://98.86.229.154:30080/health | python3 -m json.tool
+WORKER_IP=$(kubectl get nodes -o wide --kubeconfig=/var/lib/jenkins/.kube/config \
+  | grep -v control-plane | grep Ready | head -1 | awk '{print $7}')
+echo "Using Worker IP: $WORKER_IP"
+curl -s http://${WORKER_IP}:30080/health | python3 -m json.tool
 
 echo ""
-echo "--- 7. DOCKER IMAGE ---"
+echo "--- 7. LIVE APP ---"
+curl -s http://${WORKER_IP}:30080 | grep -o 'Aakash E\|RA2311026010022\|CI.CD Pipeline'
+
+echo ""
+echo "--- 8. DOCKER IMAGE ---"
 docker images | grep cicd-demo-app
 
 echo ""
-echo "--- 8. JENKINS STATUS ---"
+echo "--- 9. JENKINS STATUS ---"
 sudo systemctl status jenkins | grep -E "Active|Main PID"
 
 echo ""
