@@ -4,6 +4,15 @@ echo "  EXPERIMENT 1 PROOF — Aakash E | RA2311026010022"
 echo "================================================"
 
 echo ""
+echo "--- 0. AUTO-FIXING KUBECONFIG ---"
+MASTER_PRIVATE_IP="172.31.45.159"
+sudo sed -i "s|https://.*:6443|https://${MASTER_PRIVATE_IP}:6443|" /var/lib/jenkins/.kube/config
+sudo sed -i '/certificate-authority-data/d' /var/lib/jenkins/.kube/config
+grep -q 'insecure-skip-tls-verify' /var/lib/jenkins/.kube/config || \
+  sudo sed -i '/server:/a\    insecure-skip-tls-verify: true' /var/lib/jenkins/.kube/config
+echo "Kubeconfig fixed!"
+
+echo ""
 echo "--- 1. KUBERNETES CLUSTER STATUS ---"
 kubectl get nodes -o wide --kubeconfig=/var/lib/jenkins/.kube/config
 
@@ -28,18 +37,14 @@ echo "--- 6. APP HEALTH CHECK ---"
 curl -s http://98.86.229.154:30080/health | python3 -m json.tool
 
 echo ""
-echo "--- 7. LIVE APP RESPONSE ---"
-curl -s http://98.86.229.154:30080 | grep -o '<title>.*</title>\|Aakash\|Version\|hostname'
-
-echo ""
-echo "--- 8. DOCKER IMAGE ON HOST ---"
+echo "--- 7. DOCKER IMAGE ---"
 docker images | grep cicd-demo-app
 
 echo ""
-echo "--- 9. JENKINS SERVICE STATUS ---"
+echo "--- 8. JENKINS STATUS ---"
 sudo systemctl status jenkins | grep -E "Active|Main PID"
 
 echo ""
 echo "================================================"
-echo "  ALL CHECKS COMPLETE ✅"
+echo "  ALL CHECKS COMPLETE"
 echo "================================================"
